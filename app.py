@@ -17,27 +17,28 @@ if tenant_id and client_id and client_secret:
         headers = {
             'Authorization': f'Bearer {access_token}'
         }
-        response = requests.get(graph_url, headers=headers)
+        # Add timeout to prevent hanging on slow connections
+        response = requests.get(graph_url, headers=headers, timeout=30)
 
         # 处理许可证信息
         if response.status_code == 200:
-            licenses = response.json().get('value')
+            licenses = response.json().get('value', [])
             for license in licenses:
                 sku_id = license['skuId']
                 sku_part_number = license['skuPartNumber']
                 prepaid_units = license['prepaidUnits']
-                status = None
-                # 检查 prepaidUnits 中哪个值大于 0
-                for key, value in prepaid_units.items():
-                    if value > 0:
-                        status = key
-                        break
+                # Use next() for more efficient search - stops at first match
+                status = next((key for key, value in prepaid_units.items() if value > 0), None)
                 # 如果没有大于 0 的值，使用 capabilityStatus
                 if status is None:
                     status = license['capabilityStatus']
                 results.append([today, domain, sku_id, sku_part_number, status])
         else:
             print(f"获取许可证失败: {response.status_code} - {response.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"网络请求异常: {e}")
+    except (KeyError, ValueError) as e:
+        print(f"数据处理异常: {e}")
     except Exception as e:
         print(f"发生异常: {e}")
 else:
