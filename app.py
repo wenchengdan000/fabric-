@@ -37,8 +37,10 @@ if tenant_id and client_id and client_secret:
             print(f"获取许可证失败: {response.status_code} - {response.text}")
     except requests.exceptions.RequestException as e:
         print(f"网络请求异常: {e}")
-    except (KeyError, ValueError) as e:
-        print(f"数据处理异常: {e}")
+    except KeyError as e:
+        print(f"API响应缺少必需字段: {e}")
+    except ValueError as e:
+        print(f"数据值错误: {e}")
     except Exception as e:
         print(f"发生异常: {e}")
 else:
